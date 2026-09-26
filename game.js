@@ -153,9 +153,49 @@ function syncStartLevelUI() {
   if (startLevelEl) startLevelEl.value = startLevel;
 }
 
+const scoreEntry = document.getElementById('score-entry');
+const nameInput = document.getElementById('name-input');
+const saveScoreBtn = document.getElementById('save-score-btn');
+const recordsSection = document.getElementById('records-section');
+const recordsList = document.getElementById('records-list');
+
 let comboCount = 0;
 let bestComboThisGame = 0;
 let maxLinesThisGame = 0;
+
+// Reuses the exact sort order and MAX_RECORDS cutoff that saveRecord()
+// (above) uses, instead of re-deriving the qualification rule
+// independently, so the two can never silently disagree.
+function wouldMakeTop5(candidateScore, records) {
+  const sentinel = { score: candidateScore };
+  const merged = records.concat([sentinel]).sort((a, b) => b.score - a.score).slice(0, MAX_RECORDS);
+  return merged.indexOf(sentinel) !== -1;
+}
+
+function renderRecords(records, highlightRank) {
+  while (recordsList.firstChild) recordsList.removeChild(recordsList.firstChild);
+  records.forEach((rec, i) => {
+    const li = document.createElement('li');
+    li.className = 'record-row' + (i === highlightRank ? ' highlight' : '');
+
+    const rank = document.createElement('span');
+    rank.className = 'record-rank';
+    rank.textContent = `#${i + 1}`;
+
+    const name = document.createElement('span');
+    name.className = 'record-name';
+    name.textContent = rec.name;
+
+    const scoreSpan = document.createElement('span');
+    scoreSpan.className = 'record-score';
+    scoreSpan.textContent = rec.score.toLocaleString();
+
+    li.appendChild(rank);
+    li.appendChild(name);
+    li.appendChild(scoreSpan);
+    recordsList.appendChild(li);
+  });
+}
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -361,6 +401,22 @@ function endGame() {
   hideControls();
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
+
+  const records = loadRecords();
+  const qualifies = wouldMakeTop5(score, records);
+
+  if (qualifies) {
+    scoreEntry.classList.remove('hidden');
+    nameInput.value = '';
+    nameInput.disabled = false;
+    saveScoreBtn.disabled = false;
+  } else {
+    scoreEntry.classList.add('hidden');
+  }
+
+  recordsSection.classList.remove('hidden');
+  renderRecords(records, -1);
+
   overlay.classList.remove('hidden');
 }
 
@@ -378,6 +434,8 @@ function toggleMenu() {
     hideControls();
     overlayTitle.textContent = 'PAUSA';
     overlayScore.textContent = '';
+    scoreEntry.classList.add('hidden');
+    recordsSection.classList.add('hidden');
     overlay.classList.remove('hidden');
   } else {
     hideControls();
@@ -441,6 +499,8 @@ function init() {
   hideControls();
   syncStartLevelUI();
   overlay.classList.add('hidden');
+  scoreEntry.classList.add('hidden');
+  recordsSection.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
@@ -498,5 +558,15 @@ if (startLevelEl) {
     startLevelEl.value = clamped;
   });
 }
+
+saveScoreBtn.addEventListener('click', () => {
+  if (!gameOver) return;
+  const name = nameInput.value.trim() || 'AAA';
+  const { records, rank } = saveRecord({ name, score, lines, level });
+  renderRecords(records, rank);
+  scoreEntry.classList.add('hidden');
+  saveScoreBtn.disabled = true;
+  nameInput.disabled = true;
+});
 
 init();
