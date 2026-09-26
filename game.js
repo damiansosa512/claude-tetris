@@ -39,6 +39,21 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const skinSelect = document.getElementById('skin-select');
+
+// --- Skin selector stub -----------------------------------------------
+// Placeholder pending Unit 10 (SKINS constant + getSkin helper) and Unit 11
+// (draw/drawGrid/drawBlock reading currentSkin via getSkin). This local
+// SKINS map only exists so Unit 12 can validate ids; delete/reconcile it
+// when Units 10/11 land.
+const SKINS = {
+  retro: {},
+  neon: {},
+  pastel: {},
+  pixel: {},
+};
+
+let currentSkin = 'retro';
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
@@ -275,6 +290,10 @@ function init() {
 }
 
 document.addEventListener('keydown', e => {
+  // Don't hijack keystrokes meant for a focused form control (e.g. arrow
+  // keys navigating #skin-select) — let it handle its own input instead
+  // of also moving/rotating the piece or toggling pause.
+  if (e.target && (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT')) return;
   if (e.code === 'KeyP') { togglePause(); return; }
   if (paused || gameOver) return;
   switch (e.code) {
@@ -300,5 +319,39 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+
+function isValidSkin(id) {
+  return Object.prototype.hasOwnProperty.call(SKINS, id);
+}
+
+function initSkinSelector() {
+  let stored = null;
+  try {
+    stored = localStorage.getItem('tetris-skin');
+  } catch (e) {
+    stored = null;
+  }
+  currentSkin = isValidSkin(stored) ? stored : 'retro';
+  if (skinSelect) skinSelect.value = currentSkin;
+}
+
+if (skinSelect) {
+  skinSelect.addEventListener('change', () => {
+    const val = skinSelect.value;
+    if (!isValidSkin(val)) return;
+    currentSkin = val;
+    try {
+      localStorage.setItem('tetris-skin', currentSkin);
+    } catch (e) {
+      // ignore persistence errors (e.g. private browsing)
+    }
+    // Force an immediate re-render so the skin change is visible right
+    // away, even while paused — draw()/drawNext() are idempotent.
+    draw();
+    drawNext();
+  });
+}
+
+initSkinSelector();
 
 init();
