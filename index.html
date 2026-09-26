@@ -38,6 +38,7 @@
             <li><kbd>↓</kbd> bajar</li>
             <li><kbd>Space</kbd> caída</li>
             <li><kbd>P</kbd> pausa</li>
+            <li><kbd>Esc</kbd> pausa</li>
           </ul>
         </div>
       </aside>
@@ -75,7 +76,7 @@
             </select>
           </div>
 
-          <div class="menu-buttons">
+          <div id="menu-buttons" class="menu-buttons">
             <button id="resume-btn">Reanudar</button>
             <button id="restart-btn">Reiniciar</button>
             <button id="controls-btn">Ver controles</button>
@@ -84,13 +85,7 @@
 
         <div id="controls-panel" class="hidden">
           <span class="label">CONTROLES</span>
-          <ul>
-            <li><kbd>←</kbd><kbd>→</kbd> mover</li>
-            <li><kbd>↑</kbd> rotar</li>
-            <li><kbd>↓</kbd> bajar</li>
-            <li><kbd>Space</kbd> caída</li>
-            <li><kbd>P</kbd> pausa</li>
-          </ul>
+          <ul id="controls-panel-list"></ul>
           <button id="back-btn">Volver</button>
         </div>
       </div>
