@@ -39,6 +39,7 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const resumeBtn = document.getElementById('resume-btn');
 
 let board, current, next, score, lines, level, paused, gameOver, menuOpen, menuView, lastTime, dropAccum, dropInterval, animId;
 
@@ -253,6 +254,12 @@ function togglePause() {
   toggleMenu();
 }
 
+// Resumes explicitly (used by the "Reanudar" button); only acts if the menu
+// is actually open, since toggleMenu() would otherwise re-open a closed menu.
+function resumeGame() {
+  if (menuOpen) toggleMenu();
+}
+
 function loop(ts) {
   const dt = ts - lastTime;
   lastTime = ts;
@@ -325,5 +332,6 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+resumeBtn.addEventListener('click', resumeGame);
 
 init();
