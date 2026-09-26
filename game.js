@@ -39,6 +39,7 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const resumeBtn = document.getElementById('resume-btn');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
@@ -226,18 +227,25 @@ function endGame() {
   overlay.classList.remove('hidden');
 }
 
+function resumeGame() {
+  if (gameOver || !paused) return;
+  paused = false;
+  lastTime = performance.now();
+  overlay.classList.add('hidden');
+  loop(lastTime);
+}
+
 function togglePause() {
   if (gameOver) return;
-  paused = !paused;
-  if (!paused) {
-    lastTime = performance.now();
-    loop(lastTime);
-  } else {
-    cancelAnimationFrame(animId);
-    overlayTitle.textContent = 'PAUSA';
-    overlayScore.textContent = '';
-    overlay.classList.remove('hidden');
+  if (paused) {
+    resumeGame();
+    return;
   }
+  paused = true;
+  cancelAnimationFrame(animId);
+  overlayTitle.textContent = 'PAUSA';
+  overlayScore.textContent = '';
+  overlay.classList.remove('hidden');
 }
 
 function loop(ts) {
@@ -300,5 +308,8 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+// `resume-btn` is added to index.html by the pause-menu-markup unit; guard so this
+// worktree (which doesn't have that markup yet) doesn't crash on load.
+if (resumeBtn) resumeBtn.addEventListener('click', resumeGame);
 
 init();
