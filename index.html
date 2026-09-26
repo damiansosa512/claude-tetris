@@ -47,6 +47,17 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
+
+        <div id="score-entry" class="score-entry hidden">
+          <input type="text" id="name-input" maxlength="12" placeholder="Tu nombre" autocomplete="off" />
+          <button id="save-score-btn">Guardar</button>
+        </div>
+
+        <div id="records-section" class="records-section hidden">
+          <span class="label">TOP 5</span>
+          <ol id="records-list"></ol>
+        </div>
+
         <button id="restart-btn">Reiniciar</button>
       </div>
     </div>

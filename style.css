@@ -150,3 +150,116 @@ kbd {
 #restart-btn:hover {
   background: #9bbdff;
 }
+
+/* ---- Guardar puntuación ---- */
+.score-entry {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.score-entry.hidden {
+  display: none;
+}
+
+#name-input {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  background: #1a1a25;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #e0e0e0;
+  width: 120px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+#name-input:focus {
+  outline: none;
+  border-color: #7aa2f7;
+}
+
+#save-score-btn {
+  background: #7aa2f7;
+  color: #0f0f17;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s;
+}
+
+#save-score-btn:hover {
+  background: #9bbdff;
+}
+
+#save-score-btn:disabled {
+  background: #3a3a5a;
+  color: #888;
+  cursor: default;
+}
+
+/* ---- Tabla de puntuaciones ---- */
+.records-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.records-section.hidden {
+  display: none;
+}
+
+#records-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 220px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.record-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #ccc;
+}
+
+.record-rank {
+  color: #555570;
+  width: 24px;
+}
+
+.record-name {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-score {
+  color: #7aa2f7;
+  font-weight: 700;
+}
+
+.record-row.highlight {
+  border: 1px solid #7aa2f7;
+  background: rgba(122, 162, 247, 0.15);
+  color: #fff;
+}
+
+.record-row.highlight .record-score {
+  color: #ffd54f;
+}
