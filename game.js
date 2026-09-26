@@ -153,6 +153,10 @@ function syncStartLevelUI() {
   if (startLevelEl) startLevelEl.value = startLevel;
 }
 
+let comboCount = 0;
+let bestComboThisGame = 0;
+let maxLinesThisGame = 0;
+
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
 }
@@ -219,7 +223,12 @@ function clearLines() {
     score += (LINE_SCORES[cleared] || 0) * level;
     level = startLevel + Math.floor(lines / 10);
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    comboCount++;
+    bestComboThisGame = Math.max(bestComboThisGame, comboCount);
+    maxLinesThisGame = Math.max(maxLinesThisGame, cleared);
     updateHUD();
+  } else {
+    comboCount = 0;
   }
 }
 
@@ -347,6 +356,7 @@ function hideControls() {
 
 function endGame() {
   gameOver = true;
+  updateBestStats({ combo: bestComboThisGame, lines: maxLinesThisGame });
   cancelAnimationFrame(animId);
   hideControls();
   overlayTitle.textContent = 'GAME OVER';
@@ -406,6 +416,10 @@ function loop(ts) {
 }
 
 function init() {
+  // Fold any in-progress game's combo/line stats into the all-time bests
+  // before resetting — covers restarting from the pause overlay, which
+  // (unlike a natural game over) skips endGame()'s own updateBestStats() call.
+  if (!gameOver) updateBestStats({ combo: bestComboThisGame, lines: maxLinesThisGame });
   board = createBoard();
   score = 0;
   lines = 0;
@@ -417,6 +431,9 @@ function init() {
   menuView = 'main';
   dropInterval = Math.max(100, 1000 - (startLevel - 1) * 90);
   dropAccum = 0;
+  comboCount = 0;
+  bestComboThisGame = 0;
+  maxLinesThisGame = 0;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
