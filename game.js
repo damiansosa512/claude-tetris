@@ -39,6 +39,13 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const menuButtons = document.getElementById('menu-buttons');
+const controlsBtn = document.getElementById('controls-btn');
+const controlsPanel = document.getElementById('controls-panel');
+const controlsPanelList = document.getElementById('controls-panel-list');
+const backBtn = document.getElementById('back-btn');
+// Single source of truth for key-binding text: the side panel's own controls list.
+const sidePanelControlsList = document.querySelector('.panel-section.controls ul');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
@@ -218,9 +225,26 @@ function drawNext() {
       drawBlock(nextCtx, offX + c, offY + r, shape[r][c], NB);
 }
 
+function populateControlsPanel() {
+  if (!controlsPanelList || !sidePanelControlsList) return;
+  controlsPanelList.innerHTML = sidePanelControlsList.innerHTML;
+}
+
+function showControls() {
+  populateControlsPanel();
+  if (menuButtons) menuButtons.classList.add('hidden');
+  if (controlsPanel) controlsPanel.classList.remove('hidden');
+}
+
+function hideControls() {
+  if (controlsPanel) controlsPanel.classList.add('hidden');
+  if (menuButtons) menuButtons.classList.remove('hidden');
+}
+
 function endGame() {
   gameOver = true;
   cancelAnimationFrame(animId);
+  hideControls();
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
   overlay.classList.remove('hidden');
@@ -230,10 +254,13 @@ function togglePause() {
   if (gameOver) return;
   paused = !paused;
   if (!paused) {
+    hideControls();
+    overlay.classList.add('hidden');
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
+    hideControls();
     overlayTitle.textContent = 'PAUSA';
     overlayScore.textContent = '';
     overlay.classList.remove('hidden');
@@ -269,6 +296,7 @@ function init() {
   next = randomPiece();
   spawn();
   updateHUD();
+  hideControls();
   overlay.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
@@ -300,5 +328,7 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+if (controlsBtn) controlsBtn.addEventListener('click', showControls);
+if (backBtn) backBtn.addEventListener('click', hideControls);
 
 init();
