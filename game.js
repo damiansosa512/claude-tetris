@@ -28,6 +28,47 @@ const PIECES = [
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
+// --- Unit 10 placeholder stub ---------------------------------------------
+// SKINS/getSkin are owned by Unit 10 (sibling worktree, isolated from this
+// one). This is a minimal local stand-in matching the agreed contract so
+// Unit 11 (rendering) can be implemented and tested in isolation. DELETE /
+// RECONCILE this block once Unit 10's PR merges and defines the real thing.
+const SKINS = {
+  retro: {
+    colors: COLORS,
+    background: '#1a1a25',
+    gridColor: '#22222e',
+    style: 'flat',
+  },
+  neon: {
+    colors: [null, '#00e5ff', '#ffee00', '#e040fb', '#00ff87', '#ff1744', '#3d5afe', '#ff9100'],
+    background: '#000000',
+    gridColor: '#111122',
+    style: 'glow',
+  },
+  pastel: {
+    colors: [null, '#a8e6ff', '#fff3b0', '#e3b8ff', '#b8f2c9', '#ffb8c6', '#c3c9ff', '#ffd6a8'],
+    background: '#2a2a35',
+    gridColor: '#3a3a45',
+    style: 'rounded',
+  },
+  pixel: {
+    colors: COLORS,
+    background: '#1a1a25',
+    gridColor: '#22222e',
+    style: 'pixel',
+  },
+};
+
+function getSkin(id) {
+  return SKINS[id] || SKINS.retro;
+}
+
+// Assigned by Unit 12's skin-selector UI (+ localStorage persistence); we
+// only read it here.
+let currentSkin = 'retro';
+// ---------------------------------------------------------------------------
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -158,18 +199,73 @@ function updateHUD() {
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
-  const color = COLORS[colorIndex];
+  const skin = getSkin(currentSkin);
+  const color = skin.colors[colorIndex];
   context.globalAlpha = alpha ?? 1;
   context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+
+  const bx = x * size + 1;
+  const by = y * size + 1;
+  const bw = size - 2;
+  const bh = size - 2;
+
+  if (skin.style === 'glow') {
+    context.shadowBlur = 12;
+    context.shadowColor = color;
+  }
+
+  const useRoundRect = skin.style === 'rounded' && !!context.roundRect;
+  if (useRoundRect) {
+    context.beginPath();
+    context.roundRect(bx, by, bw, bh, 4);
+    context.fill();
+  } else {
+    context.fillRect(bx, by, bw, bh);
+  }
+
+  // Shadow state is only wanted on the main block fill; clear it before the
+  // highlight strip so the glow skin's highlight stays a plain white gloss
+  // instead of picking up a tinted halo.
+  if (skin.style === 'glow') {
+    context.shadowBlur = 0;
+  }
+
   // highlight
   context.fillStyle = 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  if (useRoundRect) {
+    // Clip to the same rounded silhouette so the highlight doesn't poke
+    // square corners out past the rounded block background.
+    context.save();
+    context.beginPath();
+    context.roundRect(bx, by, bw, bh, 4);
+    context.clip();
+    context.fillRect(bx, by, bw, 4);
+    context.restore();
+  } else {
+    context.fillRect(bx, by, bw, 4);
+  }
+
+  if (skin.style === 'pixel') {
+    // simple checkerboard texture drawn on top of the block
+    const sub = size / 3;
+    context.fillStyle = 'rgba(0,0,0,0.15)';
+    for (let sr = 0; sr < 3; sr++) {
+      for (let sc = 0; sc < 3; sc++) {
+        if ((sr + sc) % 2 === 0) {
+          context.fillRect(bx + sc * sub, by + sr * sub, sub, sub);
+        }
+      }
+    }
+  }
+
+  // Unconditional cleanup so canvas state never leaks into the next
+  // drawBlock call (or into drawNext's use of a separate context).
   context.globalAlpha = 1;
+  context.shadowBlur = 0;
 }
 
 function drawGrid() {
-  ctx.strokeStyle = '#22222e';
+  ctx.strokeStyle = getSkin(currentSkin).gridColor;
   ctx.lineWidth = 0.5;
   for (let c = 1; c < COLS; c++) {
     ctx.beginPath();
@@ -186,7 +282,11 @@ function drawGrid() {
 }
 
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const skin = getSkin(currentSkin);
+  // Opaque full-canvas fill covers every pixel, so a separate clearRect
+  // beforehand would just be discarded work.
+  ctx.fillStyle = skin.background;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   drawGrid();
 
   // board
@@ -209,7 +309,11 @@ function draw() {
 
 function drawNext() {
   const NB = 30;
-  nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+  const skin = getSkin(currentSkin);
+  // Opaque full-canvas fill covers every pixel, so a separate clearRect
+  // beforehand would just be discarded work.
+  nextCtx.fillStyle = skin.background;
+  nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
   const shape = next.shape;
   const offX = Math.floor((4 - shape[0].length) / 2);
   const offY = Math.floor((4 - shape.length) / 2);
