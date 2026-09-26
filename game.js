@@ -40,7 +40,7 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, next, score, lines, level, paused, gameOver, menuOpen, menuView, lastTime, dropAccum, dropInterval, animId;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -226,18 +226,31 @@ function endGame() {
   overlay.classList.remove('hidden');
 }
 
-function togglePause() {
+// State machine for the pause/menu overlay. `menuOpen` tracks whether the
+// menu is visible; `paused` mirrors it so the game loop stays stopped while
+// the menu is open. `menuView` tracks which panel of the menu is showing
+// ('main' or 'controls') for sibling units that wire up real menu buttons.
+function toggleMenu() {
   if (gameOver) return;
-  paused = !paused;
-  if (!paused) {
-    lastTime = performance.now();
-    loop(lastTime);
-  } else {
+  menuOpen = !menuOpen;
+  paused = menuOpen;
+  if (menuOpen) {
+    menuView = 'main';
     cancelAnimationFrame(animId);
     overlayTitle.textContent = 'PAUSA';
     overlayScore.textContent = '';
     overlay.classList.remove('hidden');
+  } else {
+    overlay.classList.add('hidden');
+    lastTime = performance.now();
+    loop(lastTime);
   }
+}
+
+// Kept as an alias so any existing callers (or sibling units wiring up
+// buttons) that still invoke togglePause() keep working unchanged.
+function togglePause() {
+  toggleMenu();
 }
 
 function loop(ts) {
@@ -263,6 +276,8 @@ function init() {
   level = 1;
   paused = false;
   gameOver = false;
+  menuOpen = false;
+  menuView = 'main';
   dropInterval = 1000;
   dropAccum = 0;
   lastTime = performance.now();
@@ -274,8 +289,18 @@ function init() {
   animId = requestAnimationFrame(loop);
 }
 
+const MENU_BLOCKED_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyX'];
+
 document.addEventListener('keydown', e => {
-  if (e.code === 'KeyP') { togglePause(); return; }
+  if (e.code === 'KeyP' || e.code === 'Escape') {
+    if (e.repeat) return;
+    toggleMenu();
+    return;
+  }
+  if (menuOpen) {
+    if (MENU_BLOCKED_KEYS.includes(e.code)) e.preventDefault();
+    return;
+  }
   if (paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
