@@ -38,6 +38,7 @@
             <li><kbd>↓</kbd> bajar</li>
             <li><kbd>Space</kbd> caída</li>
             <li><kbd>P</kbd> pausa</li>
+            <li><kbd>Esc</kbd> pausa</li>
           </ul>
         </div>
       </aside>
@@ -47,7 +48,15 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
-        <button id="restart-btn">Reiniciar</button>
+        <div id="menu-buttons">
+          <button id="restart-btn">Reiniciar</button>
+          <button id="controls-btn">Ver controles</button>
+        </div>
+        <div id="controls-panel" class="hidden">
+          <span class="label">CONTROLS</span>
+          <ul id="controls-panel-list"></ul>
+          <button id="back-btn">Volver</button>
+        </div>
       </div>
     </div>
   </div>
