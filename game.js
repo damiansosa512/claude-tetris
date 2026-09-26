@@ -197,6 +197,13 @@ function renderRecords(records, highlightRank) {
   });
 }
 
+const startScreen = document.getElementById('start-screen');
+const startRecordsList = document.getElementById('start-records-list');
+const startBestCombo = document.getElementById('start-best-combo');
+const startMaxLines = document.getElementById('start-max-lines');
+const startBtn = document.getElementById('start-btn');
+const resetRecordsBtn = document.getElementById('reset-records-btn');
+
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
 }
@@ -308,6 +315,47 @@ function spawn() {
     endGame();
   }
   drawNext();
+}
+
+function renderRecordsList(listEl, records) {
+  while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
+
+  if (!records.length) {
+    const li = document.createElement('li');
+    li.className = 'record-row record-empty';
+    li.textContent = 'Sin récords todavía';
+    listEl.appendChild(li);
+    return;
+  }
+
+  records.forEach((rec, i) => {
+    const li = document.createElement('li');
+    li.className = 'record-row';
+
+    const rank = document.createElement('span');
+    rank.className = 'record-rank';
+    rank.textContent = `${i + 1}.`;
+
+    const name = document.createElement('span');
+    name.className = 'record-name';
+    name.textContent = rec.name || '---';
+
+    const scoreSpan = document.createElement('span');
+    scoreSpan.className = 'record-score';
+    scoreSpan.textContent = (rec.score || 0).toLocaleString();
+
+    li.appendChild(rank);
+    li.appendChild(name);
+    li.appendChild(scoreSpan);
+    listEl.appendChild(li);
+  });
+}
+
+function renderStartScreen() {
+  renderRecordsList(startRecordsList, loadRecords());
+  const stats = getBestStats();
+  startBestCombo.textContent = stats.bestCombo;
+  startMaxLines.textContent = stats.maxLines;
 }
 
 function updateHUD() {
@@ -508,6 +556,7 @@ function init() {
 const MENU_BLOCKED_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyX'];
 
 document.addEventListener('keydown', e => {
+  if (!current) return; // game hasn't started yet (start screen still showing)
   if (document.activeElement === startLevelEl) return;
   if (e.code === 'KeyP' || e.code === 'Escape') {
     if (e.repeat) return;
@@ -569,4 +618,18 @@ saveScoreBtn.addEventListener('click', () => {
   nameInput.disabled = true;
 });
 
-init();
+startBtn.addEventListener('click', () => {
+  startScreen.classList.add('hidden');
+  init();
+});
+
+resetRecordsBtn.addEventListener('click', () => {
+  if (confirm('¿Seguro que querés borrar los récords y las estadísticas?')) {
+    resetRecords();
+    renderStartScreen();
+  }
+});
+
+// Don't auto-start the game loop: show the start screen with records/stats
+// first, and let the player kick things off via #start-btn.
+renderStartScreen();

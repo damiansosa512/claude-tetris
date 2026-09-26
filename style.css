@@ -219,7 +219,8 @@ kbd {
 #resume-btn,
 #restart-btn,
 #controls-btn,
-#back-btn {
+#back-btn,
+#start-btn {
   margin-top: 8px;
   background: #7aa2f7;
   color: #0f0f17;
@@ -237,7 +238,8 @@ kbd {
 #resume-btn:hover,
 #restart-btn:hover,
 #controls-btn:hover,
-#back-btn:hover {
+#back-btn:hover,
+#start-btn:hover {
   background: #9bbdff;
 }
 
@@ -305,7 +307,64 @@ kbd {
   cursor: default;
 }
 
-/* ---- Tabla de puntuaciones ---- */
+/* ---- Start screen ---- */
+#start-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  color: #7aa2f7;
+}
+
+.start-records {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 220px;
+}
+
+#start-records-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.start-stats {
+  display: flex;
+  gap: 28px;
+}
+
+.start-stats .stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+#reset-records-btn {
+  margin-top: 4px;
+  background: transparent;
+  color: #888;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s, color 0.15s;
+}
+
+#reset-records-btn:hover {
+  background: #22223a;
+  color: #e57373;
+}
+
+/* ---- Tabla de puntuaciones (game over) ---- */
 .records-section {
   display: flex;
   flex-direction: column;
@@ -364,6 +423,33 @@ kbd {
 
 .record-row.highlight .record-score {
   color: #ffd54f;
+}
+
+.record-empty {
+  color: #666;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Start screen's records list reuses .record-row/.record-rank/.record-score
+   (shared with the game-over list above) but with its own look, scoped so
+   the two lists don't bleed into each other's styling. */
+#start-records-list .record-row {
+  gap: 10px;
+  padding: 2px 6px;
+  background: none;
+}
+
+#start-records-list .record-rank {
+  color: #7aa2f7;
+  width: 20px;
+  text-align: right;
+}
+
+#start-records-list .record-score {
+  color: #ffd54f;
+  text-align: right;
+  min-width: 60px;
 }
 
 /* ---- Panel de controles (dentro del overlay) ---- */
