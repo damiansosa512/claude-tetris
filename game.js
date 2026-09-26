@@ -15,6 +15,76 @@ const COLORS = [
   '#ffb74d', // L - orange
 ];
 
+// Visual skins: id -> { colors, background, gridColor, style }.
+// `colors` mirrors COLORS' shape exactly: index 0 is null (empty cell),
+// indices 1-7 are the piece colors for I, O, T, S, Z, J, L in that order.
+// `style` is a flag sibling rendering code switches on (Unit 11):
+//   'flat' | 'glow' | 'rounded' | 'pixel'.
+const SKINS = {
+  retro: {
+    // Reuse COLORS directly (rather than retyping the literals) so this
+    // skin can never drift out of sync if COLORS is ever retuned.
+    colors: COLORS,
+    background: '#1a1a25',
+    gridColor: '#22222e',
+    style: 'flat',
+  },
+  neon: {
+    colors: [
+      null,
+      '#00f5ff', // I - electric cyan
+      '#fff200', // O - electric yellow
+      '#e100ff', // T - electric magenta/purple
+      '#39ff14', // S - electric green
+      '#ff073a', // Z - electric red
+      '#3d5afe', // J - electric indigo
+      '#ff9100', // L - electric orange
+    ],
+    background: '#000000',
+    gridColor: '#1a0033',
+    style: 'glow',
+  },
+  pastel: {
+    colors: [
+      null,
+      '#a8e6ea', // I - soft cyan
+      '#fff2b2', // O - soft yellow
+      '#dcb8e0', // T - soft purple
+      '#bfe3c0', // S - soft green
+      '#f2b6b6', // Z - soft red
+      '#b9c0e8', // J - soft indigo
+      '#f7d3ab', // L - soft orange
+    ],
+    background: '#f5f2ec',
+    gridColor: '#e0dccf',
+    style: 'rounded',
+  },
+  pixel: {
+    colors: [
+      null,
+      '#3fc7d6', // I - muted cyan
+      '#e6c14d', // O - muted yellow
+      '#a15bb0', // T - muted purple
+      '#6fae74', // S - muted green
+      '#c96363', // Z - muted red
+      '#6a75b0', // J - muted indigo
+      '#d69955', // L - muted orange
+    ],
+    background: '#1a1a25',
+    gridColor: '#22222e',
+    style: 'pixel',
+  },
+};
+
+// Safe lookup for a skin id; falls back to 'retro' for unknown/corrupt ids
+// (e.g. a stale/invalid value read back from localStorage). Uses
+// hasOwnProperty rather than `SKINS[id] || SKINS.retro` so inherited
+// Object.prototype keys (e.g. id === '__proto__' or 'constructor') can't
+// resolve to something other than a real skin entry.
+function getSkin(id) {
+  return Object.prototype.hasOwnProperty.call(SKINS, id) ? SKINS[id] : SKINS.retro;
+}
+
 const PIECES = [
   null,
   [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], // I
