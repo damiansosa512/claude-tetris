@@ -28,6 +28,76 @@ const PIECES = [
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
+const RECORDS_KEY = 'tetris-records';
+const BEST_COMBO_KEY = 'tetris-best-combo';
+const MAX_LINES_KEY = 'tetris-max-lines';
+const MAX_RECORDS = 5;
+
+function loadRecords() {
+  try {
+    const raw = localStorage.getItem(RECORDS_KEY);
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecord({ name, score, lines, level }) {
+  const records = loadRecords();
+  const entry = { name, score, lines, level, date: new Date().toISOString() };
+  records.push(entry);
+  records.sort((a, b) => b.score - a.score);
+  const truncated = records.slice(0, MAX_RECORDS);
+  try {
+    localStorage.setItem(RECORDS_KEY, JSON.stringify(truncated));
+  } catch {
+    // ignore write errors (quota/unavailable storage)
+  }
+  const rank = truncated.indexOf(entry);
+  return { records: truncated, rank };
+}
+
+function resetRecords() {
+  try {
+    localStorage.removeItem(RECORDS_KEY);
+    localStorage.removeItem(BEST_COMBO_KEY);
+    localStorage.removeItem(MAX_LINES_KEY);
+  } catch {
+    // ignore unavailable storage
+  }
+}
+
+function getBestStats() {
+  let bestCombo = 0;
+  let maxLines = 0;
+  try {
+    const combo = parseInt(localStorage.getItem(BEST_COMBO_KEY), 10);
+    if (Number.isFinite(combo)) bestCombo = combo;
+  } catch {
+    bestCombo = 0;
+  }
+  try {
+    const maxL = parseInt(localStorage.getItem(MAX_LINES_KEY), 10);
+    if (Number.isFinite(maxL)) maxLines = maxL;
+  } catch {
+    maxLines = 0;
+  }
+  return { bestCombo, maxLines };
+}
+
+function updateBestStats({ combo, lines }) {
+  try {
+    const current = getBestStats();
+    const nextCombo = Math.max(current.bestCombo, combo || 0);
+    const nextMaxLines = Math.max(current.maxLines, lines || 0);
+    localStorage.setItem(BEST_COMBO_KEY, String(nextCombo));
+    localStorage.setItem(MAX_LINES_KEY, String(nextMaxLines));
+  } catch {
+    // ignore write errors (quota/unavailable storage)
+  }
+}
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
