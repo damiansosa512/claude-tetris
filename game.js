@@ -39,8 +39,104 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const scoreEntry = document.getElementById('score-entry');
+const nameInput = document.getElementById('name-input');
+const saveScoreBtn = document.getElementById('save-score-btn');
+const recordsSection = document.getElementById('records-section');
+const recordsList = document.getElementById('records-list');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+
+// ---------------------------------------------------------------------
+// PLACEHOLDER STORAGE LAYER (Unit 8)
+// loadRecords()/saveRecord()/wouldMakeTop5() below are a local
+// localStorage-backed stub matching the contract Unit 6 is building in an
+// isolated worktree:
+//   loadRecords() -> array of { name, score, lines, level, date }, sorted
+//     desc by score, max 5 entries.
+//   saveRecord({ name, score, lines, level }) -> { records, rank } where
+//     rank is the 0-based index in the top-5 if it made the cut, else -1.
+// TODO: delete this whole guarded block and rely on Unit 6's real
+// implementation once that PR merges (same function names/signatures, so
+// this is a drop-in replacement).
+//
+// Everything here is declared with `var`/`typeof` guards rather than
+// `const`/`function` at bare top level: if this file is merged with Unit
+// 6's storage module (which will very likely declare the same
+// loadRecords/saveRecord names), two top-level `const` declarations of the
+// same name would be a hard `SyntaxError: Identifier has already been
+// declared`. `var` can coexist with another `var` or `function`
+// declaration of the same name, so the merge stays parseable; the
+// `typeof loadRecords === 'undefined'` guard also means that if Unit 6's
+// real functions are already defined by the time this runs, this
+// placeholder is skipped entirely instead of clobbering them.
+// ---------------------------------------------------------------------
+if (typeof loadRecords === 'undefined') {
+  var RECORDS_KEY = 'tetris-high-scores';
+  var MAX_RECORDS = 5;
+
+  var byScoreDesc = function byScoreDesc(a, b) { return b.score - a.score; };
+
+  var loadRecords = function loadRecords() {
+    let records;
+    try {
+      records = JSON.parse(localStorage.getItem(RECORDS_KEY)) || [];
+    } catch (e) {
+      records = [];
+    }
+    if (!Array.isArray(records)) records = [];
+    return records.slice().sort(byScoreDesc).slice(0, MAX_RECORDS);
+  };
+
+  var saveRecord = function saveRecord({ name, score, lines, level }) {
+    const records = loadRecords();
+    const entry = { name, score, lines, level, date: new Date().toISOString() };
+    records.push(entry);
+    records.sort(byScoreDesc);
+    const trimmed = records.slice(0, MAX_RECORDS);
+    const rank = trimmed.indexOf(entry);
+    try {
+      localStorage.setItem(RECORDS_KEY, JSON.stringify(trimmed));
+    } catch (e) {
+      // ignore storage errors (quota exceeded, private mode, etc.)
+    }
+    return { records: trimmed, rank };
+  };
+
+  // Reuses the exact `byScoreDesc` comparator (and the same push+sort+trim
+  // shape) that saveRecord uses, instead of re-deriving the qualification
+  // rule independently, so the two can never silently disagree.
+  var wouldMakeTop5 = function wouldMakeTop5(candidateScore, records) {
+    const sentinel = { score: candidateScore };
+    const merged = records.concat([sentinel]).sort(byScoreDesc).slice(0, MAX_RECORDS);
+    return merged.indexOf(sentinel) !== -1;
+  };
+}
+
+function renderRecords(records, highlightRank) {
+  while (recordsList.firstChild) recordsList.removeChild(recordsList.firstChild);
+  records.forEach((rec, i) => {
+    const li = document.createElement('li');
+    li.className = 'record-row' + (i === highlightRank ? ' highlight' : '');
+
+    const rank = document.createElement('span');
+    rank.className = 'record-rank';
+    rank.textContent = `#${i + 1}`;
+
+    const name = document.createElement('span');
+    name.className = 'record-name';
+    name.textContent = rec.name;
+
+    const scoreSpan = document.createElement('span');
+    scoreSpan.className = 'record-score';
+    scoreSpan.textContent = rec.score.toLocaleString();
+
+    li.appendChild(rank);
+    li.appendChild(name);
+    li.appendChild(scoreSpan);
+    recordsList.appendChild(li);
+  });
+}
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -223,6 +319,22 @@ function endGame() {
   cancelAnimationFrame(animId);
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
+
+  const records = loadRecords();
+  const qualifies = wouldMakeTop5(score, records);
+
+  if (qualifies) {
+    scoreEntry.classList.remove('hidden');
+    nameInput.value = '';
+    nameInput.disabled = false;
+    saveScoreBtn.disabled = false;
+  } else {
+    scoreEntry.classList.add('hidden');
+  }
+
+  recordsSection.classList.remove('hidden');
+  renderRecords(records, -1);
+
   overlay.classList.remove('hidden');
 }
 
@@ -236,6 +348,8 @@ function togglePause() {
     cancelAnimationFrame(animId);
     overlayTitle.textContent = 'PAUSA';
     overlayScore.textContent = '';
+    scoreEntry.classList.add('hidden');
+    recordsSection.classList.add('hidden');
     overlay.classList.remove('hidden');
   }
 }
@@ -270,6 +384,8 @@ function init() {
   spawn();
   updateHUD();
   overlay.classList.add('hidden');
+  scoreEntry.classList.add('hidden');
+  recordsSection.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
@@ -300,5 +416,15 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+
+saveScoreBtn.addEventListener('click', () => {
+  if (!gameOver) return;
+  const name = nameInput.value.trim() || 'AAA';
+  const { records, rank } = saveRecord({ name, score, lines, level });
+  renderRecords(records, rank);
+  scoreEntry.classList.add('hidden');
+  saveScoreBtn.disabled = true;
+  nameInput.disabled = true;
+});
 
 init();
