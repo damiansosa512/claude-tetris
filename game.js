@@ -28,6 +28,17 @@ const PIECES = [
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
+// PLACEHOLDER STUBS for Unit 6's storage layer (getBestStats/updateBestStats).
+// Remove this block and rely on Unit 6's real implementation once merged.
+let _bestStats = { bestCombo: 0, maxLines: 0 };
+function getBestStats() {
+  return { bestCombo: _bestStats.bestCombo, maxLines: _bestStats.maxLines };
+}
+function updateBestStats({ combo, lines }) {
+  _bestStats.bestCombo = Math.max(_bestStats.bestCombo, combo);
+  _bestStats.maxLines = Math.max(_bestStats.maxLines, lines);
+}
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -41,6 +52,9 @@ const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let comboCount = 0;
+let bestComboThisGame = 0;
+let maxLinesThisGame = 0;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -108,7 +122,12 @@ function clearLines() {
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    comboCount++;
+    bestComboThisGame = Math.max(bestComboThisGame, comboCount);
+    maxLinesThisGame = Math.max(maxLinesThisGame, cleared);
     updateHUD();
+  } else {
+    comboCount = 0;
   }
 }
 
@@ -220,6 +239,7 @@ function drawNext() {
 
 function endGame() {
   gameOver = true;
+  updateBestStats({ combo: bestComboThisGame, lines: maxLinesThisGame });
   cancelAnimationFrame(animId);
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
@@ -257,6 +277,10 @@ function loop(ts) {
 }
 
 function init() {
+  // Fold any in-progress game's combo/line stats into the all-time bests
+  // before resetting — covers restarting from the pause overlay, which
+  // (unlike a natural game over) skips endGame()'s own updateBestStats() call.
+  if (!gameOver) updateBestStats({ combo: bestComboThisGame, lines: maxLinesThisGame });
   board = createBoard();
   score = 0;
   lines = 0;
@@ -265,6 +289,9 @@ function init() {
   gameOver = false;
   dropInterval = 1000;
   dropAccum = 0;
+  comboCount = 0;
+  bestComboThisGame = 0;
+  maxLinesThisGame = 0;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
