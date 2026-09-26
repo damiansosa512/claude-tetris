@@ -133,7 +133,8 @@ kbd {
   color: #7aa2f7;
 }
 
-#restart-btn {
+#restart-btn,
+#start-btn {
   margin-top: 8px;
   background: #7aa2f7;
   color: #0f0f17;
@@ -147,6 +148,94 @@ kbd {
   transition: background 0.15s;
 }
 
-#restart-btn:hover {
+#restart-btn:hover,
+#start-btn:hover {
   background: #9bbdff;
+}
+
+/* ---- Start screen ---- */
+#start-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  color: #7aa2f7;
+}
+
+.start-records {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 220px;
+}
+
+#start-records-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.record-row {
+  display: flex;
+  gap: 10px;
+  color: #ccc;
+  padding: 2px 6px;
+}
+
+.record-rank {
+  color: #7aa2f7;
+  width: 20px;
+  text-align: right;
+}
+
+.record-name {
+  flex: 1;
+  text-align: left;
+}
+
+.record-score {
+  color: #ffd54f;
+  text-align: right;
+  min-width: 60px;
+}
+
+.record-empty {
+  color: #666;
+  justify-content: center;
+  text-align: center;
+}
+
+.start-stats {
+  display: flex;
+  gap: 28px;
+}
+
+.start-stats .stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+#reset-records-btn {
+  margin-top: 4px;
+  background: transparent;
+  color: #888;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s, color 0.15s;
+}
+
+#reset-records-btn:hover {
+  background: #22223a;
+  color: #e57373;
 }
