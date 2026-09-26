@@ -205,6 +205,8 @@ function clampStartLevel(value) {
   return Math.min(MAX_START_LEVEL, Math.max(MIN_START_LEVEL, n));
 }
 
+const skinSelect = document.getElementById('skin-select');
+
 function loadStartLevel() {
   let raw = null;
   try {
@@ -694,7 +696,10 @@ const MENU_BLOCKED_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'S
 
 document.addEventListener('keydown', e => {
   if (!current) return; // game hasn't started yet (start screen still showing)
-  if (document.activeElement === startLevelEl) return;
+  // Don't hijack keystrokes meant for a focused form control (e.g. arrow
+  // keys navigating #skin-select or #start-level) — let it handle its own
+  // input instead of also moving/rotating the piece or toggling the menu.
+  if (e.target && (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT')) return;
   if (e.code === 'KeyP' || e.code === 'Escape') {
     if (e.repeat) return;
     toggleMenu();
@@ -766,6 +771,44 @@ resetRecordsBtn.addEventListener('click', () => {
     renderStartScreen();
   }
 });
+
+function isValidSkin(id) {
+  return Object.prototype.hasOwnProperty.call(SKINS, id);
+}
+
+function initSkinSelector() {
+  let stored = null;
+  try {
+    stored = localStorage.getItem('tetris-skin');
+  } catch (e) {
+    stored = null;
+  }
+  currentSkin = isValidSkin(stored) ? stored : 'retro';
+  if (skinSelect) skinSelect.value = currentSkin;
+}
+
+if (skinSelect) {
+  skinSelect.addEventListener('change', () => {
+    const val = skinSelect.value;
+    if (!isValidSkin(val)) return;
+    currentSkin = val;
+    try {
+      localStorage.setItem('tetris-skin', currentSkin);
+    } catch (e) {
+      // ignore persistence errors (e.g. private browsing)
+    }
+    // Force an immediate re-render so the skin change is visible right
+    // away, even while paused — draw()/drawNext() are idempotent, but only
+    // safe to call once the game has actually started (current/next exist);
+    // #skin-select is reachable from the start screen before that.
+    if (current) {
+      draw();
+      drawNext();
+    }
+  });
+}
+
+initSkinSelector();
 
 // Don't auto-start the game loop: show the start screen with records/stats
 // first, and let the player kick things off via #start-btn.

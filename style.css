@@ -63,6 +63,29 @@ body {
   letter-spacing: 1px;
 }
 
+#skin-select {
+  background: #1a1a25;
+  color: #7aa2f7;
+  border: 1px solid #2a2a3a;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+#skin-select:hover {
+  border-color: #7aa2f7;
+}
+
+#skin-select:focus {
+  border-color: #7aa2f7;
+  outline: 2px solid #7aa2f7;
+  outline-offset: 2px;
+}
+
 #next-canvas {
   display: block;
   border: 1px solid #2a2a3a;
