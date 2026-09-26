@@ -39,8 +39,41 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const startLevelEl = document.getElementById('start-level');
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+const START_LEVEL_KEY = 'tetris-start-level';
+const MIN_START_LEVEL = 1;
+const MAX_START_LEVEL = 20;
+
+let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, startLevel;
+
+function clampStartLevel(value) {
+  const n = parseInt(value, 10);
+  if (!Number.isFinite(n)) return MIN_START_LEVEL;
+  return Math.min(MAX_START_LEVEL, Math.max(MIN_START_LEVEL, n));
+}
+
+function loadStartLevel() {
+  let raw = null;
+  try {
+    raw = localStorage.getItem(START_LEVEL_KEY);
+  } catch (e) {
+    raw = null;
+  }
+  return clampStartLevel(raw);
+}
+
+function saveStartLevel(value) {
+  try {
+    localStorage.setItem(START_LEVEL_KEY, String(value));
+  } catch (e) {
+    // ignore storage failures (e.g. private mode / quota)
+  }
+}
+
+function syncStartLevelUI() {
+  if (startLevelEl) startLevelEl.value = startLevel;
+}
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -106,7 +139,7 @@ function clearLines() {
   if (cleared) {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
-    level = Math.floor(lines / 10) + 1;
+    level = startLevel + Math.floor(lines / 10);
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
     updateHUD();
   }
@@ -260,21 +293,24 @@ function init() {
   board = createBoard();
   score = 0;
   lines = 0;
-  level = 1;
+  startLevel = loadStartLevel();
+  level = startLevel;
   paused = false;
   gameOver = false;
-  dropInterval = 1000;
+  dropInterval = Math.max(100, 1000 - (startLevel - 1) * 90);
   dropAccum = 0;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
   updateHUD();
+  syncStartLevelUI();
   overlay.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
 
 document.addEventListener('keydown', e => {
+  if (document.activeElement === startLevelEl) return;
   if (e.code === 'KeyP') { togglePause(); return; }
   if (paused || gameOver) return;
   switch (e.code) {
@@ -300,5 +336,18 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+
+if (startLevelEl) {
+  // Only persist the preference here — do NOT reassign the live `startLevel`
+  // used by clearLines()/dropInterval. The overlay is shared between PAUSE
+  // and GAME OVER, so editing this while merely paused must not corrupt an
+  // in-progress game's difficulty. `init()` is the sole place that reads the
+  // persisted value back into the live `startLevel`.
+  startLevelEl.addEventListener('change', () => {
+    const clamped = clampStartLevel(startLevelEl.value);
+    saveStartLevel(clamped);
+    startLevelEl.value = clamped;
+  });
+}
 
 init();
