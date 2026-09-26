@@ -47,8 +47,41 @@ const controlsPanelList = document.getElementById('controls-panel-list');
 const backBtn = document.getElementById('back-btn');
 // Single source of truth for key-binding text: the side panel's own controls list.
 const sidePanelControlsList = document.querySelector('.panel-section.controls ul');
+const startLevelEl = document.getElementById('start-level');
 
-let board, current, next, score, lines, level, paused, gameOver, menuOpen, menuView, lastTime, dropAccum, dropInterval, animId;
+const START_LEVEL_KEY = 'tetris-start-level';
+const MIN_START_LEVEL = 1;
+const MAX_START_LEVEL = 20;
+
+let board, current, next, score, lines, level, paused, gameOver, menuOpen, menuView, lastTime, dropAccum, dropInterval, animId, startLevel;
+
+function clampStartLevel(value) {
+  const n = parseInt(value, 10);
+  if (!Number.isFinite(n)) return MIN_START_LEVEL;
+  return Math.min(MAX_START_LEVEL, Math.max(MIN_START_LEVEL, n));
+}
+
+function loadStartLevel() {
+  let raw = null;
+  try {
+    raw = localStorage.getItem(START_LEVEL_KEY);
+  } catch (e) {
+    raw = null;
+  }
+  return clampStartLevel(raw);
+}
+
+function saveStartLevel(value) {
+  try {
+    localStorage.setItem(START_LEVEL_KEY, String(value));
+  } catch (e) {
+    // ignore storage failures (e.g. private mode / quota)
+  }
+}
+
+function syncStartLevelUI() {
+  if (startLevelEl) startLevelEl.value = startLevel;
+}
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -114,7 +147,7 @@ function clearLines() {
   if (cleared) {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
-    level = Math.floor(lines / 10) + 1;
+    level = startLevel + Math.floor(lines / 10);
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
     updateHUD();
   }
@@ -306,18 +339,20 @@ function init() {
   board = createBoard();
   score = 0;
   lines = 0;
-  level = 1;
+  startLevel = loadStartLevel();
+  level = startLevel;
   paused = false;
   gameOver = false;
   menuOpen = false;
   menuView = 'main';
-  dropInterval = 1000;
+  dropInterval = Math.max(100, 1000 - (startLevel - 1) * 90);
   dropAccum = 0;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
   updateHUD();
   hideControls();
+  syncStartLevelUI();
   overlay.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
@@ -326,6 +361,7 @@ function init() {
 const MENU_BLOCKED_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyX'];
 
 document.addEventListener('keydown', e => {
+  if (document.activeElement === startLevelEl) return;
   if (e.code === 'KeyP' || e.code === 'Escape') {
     if (e.repeat) return;
     toggleMenu();
@@ -362,5 +398,18 @@ restartBtn.addEventListener('click', init);
 resumeBtn.addEventListener('click', resumeGame);
 controlsBtn.addEventListener('click', showControls);
 backBtn.addEventListener('click', hideControls);
+
+if (startLevelEl) {
+  // Only persist the preference here — do NOT reassign the live `startLevel`
+  // used by clearLines()/dropInterval. The overlay is shared between PAUSE
+  // and GAME OVER, so editing this while merely paused must not corrupt an
+  // in-progress game's difficulty. `init()` is the sole place that reads the
+  // persisted value back into the live `startLevel`.
+  startLevelEl.addEventListener('change', () => {
+    const clamped = clampStartLevel(startLevelEl.value);
+    saveStartLevel(clamped);
+    startLevelEl.value = clamped;
+  });
+}
 
 init();
