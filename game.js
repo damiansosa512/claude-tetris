@@ -53,7 +53,7 @@ const SKINS = {
     style: 'rounded',
   },
   pixel: {
-    colors: [null, '#4dd0e1', '#ffd54f', '#ba68c8', '#81c784', '#e57373', '#7986cb', '#ffb74d'],
+    colors: COLORS,
     background: '#1a1a25',
     gridColor: '#22222e',
     style: 'pixel',
@@ -283,7 +283,8 @@ function drawGrid() {
 
 function draw() {
   const skin = getSkin(currentSkin);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Opaque full-canvas fill covers every pixel, so a separate clearRect
+  // beforehand would just be discarded work.
   ctx.fillStyle = skin.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   drawGrid();
@@ -309,7 +310,8 @@ function draw() {
 function drawNext() {
   const NB = 30;
   const skin = getSkin(currentSkin);
-  nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+  // Opaque full-canvas fill covers every pixel, so a separate clearRect
+  // beforehand would just be discarded work.
   nextCtx.fillStyle = skin.background;
   nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
   const shape = next.shape;
