@@ -40,7 +40,66 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 
+const startScreen = document.getElementById('start-screen');
+const startRecordsList = document.getElementById('start-records-list');
+const startBestCombo = document.getElementById('start-best-combo');
+const startMaxLines = document.getElementById('start-max-lines');
+const startBtn = document.getElementById('start-btn');
+const resetRecordsBtn = document.getElementById('reset-records-btn');
+
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+
+// ---------------------------------------------------------------------
+// Storage layer PLACEHOLDER STUBS.
+// These are local, localStorage-backed implementations that match the
+// contract Unit 6 (storage layer) is expected to ship:
+//   loadRecords()  -> [{ name, score, lines, level, date }, ...] desc by score, max 5
+//   resetRecords() -> clears records + aggregate stats
+//   getBestStats() -> { bestCombo, maxLines }
+// Once Unit 6's storage module is merged, these three functions (and the
+// two localStorage keys below) should be deleted and replaced with the
+// real module's exports.
+// ---------------------------------------------------------------------
+const RECORDS_STORAGE_KEY = 'tetris-records';
+const STATS_STORAGE_KEY = 'tetris-stats';
+
+function loadRecords() {
+  let records = [];
+  try {
+    const raw = localStorage.getItem(RECORDS_STORAGE_KEY);
+    if (raw) records = JSON.parse(raw);
+  } catch (e) {
+    records = [];
+  }
+  if (!Array.isArray(records)) records = [];
+  return records
+    .slice()
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+}
+
+function resetRecords() {
+  try {
+    localStorage.removeItem(RECORDS_STORAGE_KEY);
+    localStorage.removeItem(STATS_STORAGE_KEY);
+  } catch (e) {
+    /* ignore storage errors */
+  }
+}
+
+function getBestStats() {
+  let stats = {};
+  try {
+    const raw = localStorage.getItem(STATS_STORAGE_KEY);
+    if (raw) stats = JSON.parse(raw);
+  } catch (e) {
+    stats = {};
+  }
+  return {
+    bestCombo: (stats && stats.bestCombo) || 0,
+    maxLines: (stats && stats.maxLines) || 0,
+  };
+}
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -148,6 +207,47 @@ function spawn() {
     endGame();
   }
   drawNext();
+}
+
+function renderRecordsList(listEl, records) {
+  while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
+
+  if (!records.length) {
+    const li = document.createElement('li');
+    li.className = 'record-row record-empty';
+    li.textContent = 'Sin récords todavía';
+    listEl.appendChild(li);
+    return;
+  }
+
+  records.forEach((rec, i) => {
+    const li = document.createElement('li');
+    li.className = 'record-row';
+
+    const rank = document.createElement('span');
+    rank.className = 'record-rank';
+    rank.textContent = `${i + 1}.`;
+
+    const name = document.createElement('span');
+    name.className = 'record-name';
+    name.textContent = rec.name || '---';
+
+    const scoreSpan = document.createElement('span');
+    scoreSpan.className = 'record-score';
+    scoreSpan.textContent = (rec.score || 0).toLocaleString();
+
+    li.appendChild(rank);
+    li.appendChild(name);
+    li.appendChild(scoreSpan);
+    listEl.appendChild(li);
+  });
+}
+
+function renderStartScreen() {
+  renderRecordsList(startRecordsList, loadRecords());
+  const stats = getBestStats();
+  startBestCombo.textContent = stats.bestCombo;
+  startMaxLines.textContent = stats.maxLines;
 }
 
 function updateHUD() {
@@ -275,6 +375,7 @@ function init() {
 }
 
 document.addEventListener('keydown', e => {
+  if (!current) return; // game hasn't started yet (start screen still showing)
   if (e.code === 'KeyP') { togglePause(); return; }
   if (paused || gameOver) return;
   switch (e.code) {
@@ -301,4 +402,18 @@ document.addEventListener('keydown', e => {
 
 restartBtn.addEventListener('click', init);
 
-init();
+startBtn.addEventListener('click', () => {
+  startScreen.classList.add('hidden');
+  init();
+});
+
+resetRecordsBtn.addEventListener('click', () => {
+  if (confirm('¿Seguro que querés borrar los récords y las estadísticas?')) {
+    resetRecords();
+    renderStartScreen();
+  }
+});
+
+// Don't auto-start the game loop: show the start screen with records/stats
+// first, and let the player kick things off via #start-btn.
+renderStartScreen();
